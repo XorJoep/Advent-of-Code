@@ -25,13 +25,11 @@ fn main() {
 
 fn count_trees(input: &str, right: usize, down: usize) -> usize {
     return input
-        .lines()
-        .enumerate()
+        .read_line()
+        .enumerate().skip(1)
         .filter(|&(i, l)| 
             i % down == 0 &&
-            l.chars()
-             .nth(i*right/down % l.len())
-             .unwrap() == '#')
+            *l.as_bytes()[i*right/down % l.len()] == b'#')
         .count();
 }
 
