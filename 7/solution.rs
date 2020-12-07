@@ -52,35 +52,35 @@ fn gen_hashmap(input: &str) -> HashMap::<&str, Vec<Bag>>{
 
 /////////////////////////
 
-fn has_gold_bag(mapping: &HashMap::<&str, Vec<Bag>>, bag_name: &str) -> bool {
+fn can_reach_gold_bag(mapping: &HashMap::<&str, Vec<Bag>>, bag_name: &str) -> bool {
     mapping
         .get(bag_name).unwrap()
-        .iter() // iterate over vector of bags
+        .iter() // becomes true when a bag with name shiny gold is found under it.
         .fold(false, |acc, bag| acc || bag.amount != 0 
-                                                && (bag.name == GOLD_BAG_STRING 
-                                                    || has_gold_bag(&mapping, &bag.name)))
+                                    && (bag.name == GOLD_BAG_STRING 
+                                        || can_reach_gold_bag(&mapping, &bag.name))) 
 }
 
 fn part1(mapping: &HashMap::<&str, Vec<Bag>>) -> usize {
     mapping
-        .keys()
+        .keys() // count the amount of bags that can reach gold bag
         .filter(|bag| 
-            has_gold_bag(&mapping, bag))
+            can_reach_gold_bag(&mapping, bag))
         .count()
 }
 
 /////////////////////////
 
-fn amount_of_bags_within(mapping: &HashMap::<&str, Vec<Bag>>, bag_name: &str) -> usize {
+fn amount_of_bags_inside(mapping: &HashMap::<&str, Vec<Bag>>, bag_name: &str) -> usize {
     mapping
-        .get(bag_name).unwrap_or(&Vec::<Bag>::new())
-        .iter()
+        .get(bag_name).unwrap_or(&Vec::<Bag>::new()) // creates empty bag incase no bag could be found
+        .iter()                                      // and thus returns 0
         .fold(0, |acc, bag| acc 
             + bag.amount 
-            + (bag.amount) * amount_of_bags_within(&mapping, &bag.name))
+            + bag.amount * amount_of_bags_inside(&mapping, &bag.name))
 }
 
 
 fn part2(mapping: &HashMap::<&str, Vec<Bag>>) -> usize {
-    amount_of_bags_within(&mapping, GOLD_BAG_STRING)
+    amount_of_bags_inside(&mapping, GOLD_BAG_STRING)
 }
