@@ -80,7 +80,6 @@ fn amount_of_bags_inside(mapping: &HashMap::<&str, Vec<Bag>>, bag_name: &str) ->
             + bag.amount * amount_of_bags_inside(&mapping, &bag.name))
 }
 
-
 fn part2(mapping: &HashMap::<&str, Vec<Bag>>) -> usize {
     amount_of_bags_inside(&mapping, GOLD_BAG_STRING)
 }
