@@ -22,7 +22,7 @@ fn instruction_list(input: &str) -> Vec<(&str, i32)>{
     input
         .lines()
         .filter_map(|line| line.split_once(" "))
-        .map(|(instr, val)| (instr, val.parse().unwrap()))
+        .map(|(instr, val)| (instr, val.parse().expect("not integer")))
         .collect::<Vec<(&str, i32)>>()
 }
 
