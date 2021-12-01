@@ -1,3 +1,5 @@
 # Specify filepatterns you want git to ignore.
 solution
 ex_input
+sol.exe
+sol.pdb
