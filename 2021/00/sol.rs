@@ -24,7 +24,7 @@ fn main() {
     let _ = succes && execute_part(part2, &contents, 0);
 }
 
-fn execute_part(part_fn: fn(&str) -> u32, input: &str, example_result: u32,) -> bool {
+fn execute_part(part_fn: fn(&str) -> u32, input: &str, example_result: u32) -> bool {
     let start = Instant::now();
     let result = part_fn(&input);
 
