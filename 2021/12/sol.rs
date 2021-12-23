@@ -102,10 +102,10 @@ fn part1(input: &str) -> u32 {
     
     let mut chains = Vec::new();
     let mut chain = vec!["start"];
-    
+
     dive_deeper(&cave_map, &mut chains, &mut chain, false);
     
-    chains.iter().filter(|v| *v.last().unwrap() == "end").count() as u32
+    chains.iter().count() as u32
 
 }
 
@@ -125,5 +125,5 @@ fn part2(input: &str) -> u32 {
 
     dive_deeper(&cave_map, &mut chains, &mut chain, true);
 
-    chains.iter().filter(|v| *v.last().unwrap() == "end").count() as u32
+    chains.iter().count() as u32
 }
