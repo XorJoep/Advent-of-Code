@@ -5,7 +5,7 @@ fn main() {
     let expect_result_part1 = 
     24000;
     let expect_result_part2 = 
-        1;
+    45000;
     
     let filename_example = "ex_input";
     let filename= "input";
@@ -63,7 +63,18 @@ fn part1(input: &str) -> u32 {
 
 
 fn part2(input: &str) -> u32 {
-    input
-        .lines()
-        .count() as u32
+    let mut calories: Vec<u32> = input
+        .split("\n\n")
+        .map(|items| 
+            items
+                .lines()
+                .map(|s| s.parse::<u32>().expect("not integer"))
+                .sum()
+        )
+        .collect();
+    
+    calories.sort();
+    calories.reverse();
+
+    calories.iter().take(3).sum()
 }
