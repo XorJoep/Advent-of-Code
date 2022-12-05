@@ -2,14 +2,15 @@ use std::fs;
 use std::time::Instant;
 
 fn main() {
-    let expect_result_part1 = 2;
-    let expect_result_part2 = 1;
+    let expect_result_part1 = 0;
+    let expect_result_part2 = 0;
 
     let filename_example = "ex_input";
     let filename = "input";
 
-    let contents_example =
-        fs::read_to_string(filename_example).expect("Erro reading the EXAMPLE file");
+    let contents_example = fs
+        ::read_to_string(filename_example)
+        .expect("Erro reading the EXAMPLE file");
     let contents = fs::read_to_string(filename).expect("ERROR reading the INPUT file");
 
     let mut succes;
@@ -34,10 +35,7 @@ fn execute_part(part_fn: fn(&str) -> u32, input: &str, example_result: u32) -> b
         println!("\tSkipping check");
         true
     } else if result != example_result {
-        println!(
-            "\tINCORRECT: Expected: [{}] but got [{}]",
-            example_result, result
-        );
+        println!("\tINCORRECT: Expected: [{}] but got [{}]", example_result, result);
         false
     } else {
         println!("\tCORRECT");
@@ -46,32 +44,95 @@ fn execute_part(part_fn: fn(&str) -> u32, input: &str, example_result: u32) -> b
 }
 
 fn part1(input: &str) -> u32 {
-    let (cargo_plot, _) = input.split_once("\n\n").unwrap();
+    let mut cargo = Vec::<Vec<char>>::new();
+    cargo.resize(9, Vec::<char>::new());
 
-    println!("{:?}", cargo_plot);
+    let (cargo_plot, instructions) = input.split_once("\n\n").unwrap();
 
-    let cargo: Vec<(_, char)> = cargo_plot
+    cargo_plot
         .lines()
         .flat_map(|line| {
             line.chars()
                 .collect::<Vec<char>>() // make a copy as a vector
                 .chunks(4) // take chunks of chars
-                .enumerate() // enumerate each chunk
-                .filter_map(|(i, chunk)| match chunk[1] {
-                    ' ' => None,
-                    _ => Some((i, chunk[1]))
-                })
+                .enumerate()
+                .filter(|(_i, chunk)| (chunk[1] as i32) - (b'A' as i32) > 0)
+                .map(|(i, chunk)| (i, chunk[1]))
                 .collect::<Vec<(_, char)>>()
         })
         .rev()
-        .skip(1) // skip the numbers line
+        .for_each(|(i, c)| cargo[i].push(c));
+
+    instructions
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .for_each(|line| {
+            let instr = line
+                .split(" ")
+                .filter_map(|pos_num| pos_num.parse::<u32>().ok())
+                .map(|n| n - 1)
+                .collect::<Vec<u32>>();
+
+            let cargo_size = cargo[instr[1] as usize].len();
+            let mut vals = cargo[instr[1] as usize].split_off(cargo_size - (instr[0] as usize) - 1);
+            vals.reverse();
+            cargo[instr[2] as usize].append(&mut vals);
+        });
+
+    let top: String = cargo
+        .iter()
+        .filter_map(|stack| stack.last())
+        .map(|n| *n)
         .collect();
-    
-    println!("{:?}", cargo);
-    
-    1
+
+    println!("{:?}", top);
+
+    0
 }
 
 fn part2(input: &str) -> u32 {
-    input.lines().count() as u32
+    let mut cargo = Vec::<Vec<char>>::new();
+    cargo.resize(9, Vec::<char>::new());
+
+    let (cargo_plot, instructions) = input.split_once("\n\n").unwrap();
+
+    cargo_plot
+        .lines()
+        .flat_map(|line| {
+            line.chars()
+                .collect::<Vec<char>>() // make a copy as a vector
+                .chunks(4) // take chunks of chars
+                .enumerate()
+                .filter(|(_i, chunk)| (chunk[1] as i32) - (b'A' as i32) > 0)
+                .map(|(i, chunk)| (i, chunk[1]))
+                .collect::<Vec<(_, char)>>()
+        })
+        .rev()
+        .for_each(|(i, c)| cargo[i].push(c));
+
+    instructions
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .for_each(|line| {
+            let instr = line
+                .split(" ")
+                .filter_map(|pos_num| pos_num.parse::<u32>().ok())
+                .map(|n| n - 1)
+                .collect::<Vec<u32>>();
+
+            let cargo_size = cargo[instr[1] as usize].len();
+            let mut vals = cargo[instr[1] as usize].split_off(cargo_size - (instr[0] as usize) - 1);
+            // vals.reverse();
+            cargo[instr[2] as usize].append(&mut vals);
+        });
+
+    let top: String = cargo
+        .iter()
+        .filter_map(|stack| stack.last())
+        .map(|n| *n)
+        .collect();
+
+    println!("{:?}", top);
+
+    0
 }
