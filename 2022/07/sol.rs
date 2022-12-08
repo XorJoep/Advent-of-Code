@@ -47,37 +47,52 @@ fn execute_part(part_fn: fn(&str) -> u32, input: &str, example_result: u32) -> b
 #[derive(Debug)]
 struct FileNode {
     id: usize,
-    name: String,
-    size: u64,
+    size: u32,
     files: Option<Vec<usize>>,
     parent: Option<usize>,
 }
 
 impl FileNode {
-    pub fn new_file(id: usize, name: &str, parent: Option<usize>, size: u64) -> Self {
+    pub fn new_file(id: usize, parent: Option<usize>, size: u32) -> Self {
         FileNode {
             id: id,
-            name: name.to_string(),
             parent: parent,
             size: size,
             files: None,
         }
     }
 
-    pub fn new_folder(id: usize, name: &str, parent: Option<usize>) -> Self {
+    pub fn new_folder(id: usize, parent: Option<usize>) -> Self {
         FileNode {
             id: id,
-            name: name.to_string(),
             parent: parent,
             size: 0,
             files: Some(vec![]),
         }
     }
 
-    pub fn update_size(mut self) -> u64 {
-        match files {
-            Some(_) => files.iter().map(|file| file.calc_size()).sum(),
+    pub fn get_size(&self, stack: &Vec<FileNode>) -> u32 {
+        match self.files {
+            Some(_) => {
+                self.files.as_ref().unwrap()
+                    .iter()
+                    .map(|file_id| stack[*file_id].get_size(stack))
+                    .sum()
+            }
             None => self.size
+        }
+    }
+
+    pub fn small_folder_size(&self, stack: &Vec<FileNode>) -> u32 {
+        match self.files {
+            Some(_) => {
+                let size = self.get_size(stack);
+                if size < 100000 {
+                    size
+                }
+                else  { 0 }
+            }
+            None => 0
         }
     }
 
@@ -85,7 +100,7 @@ impl FileNode {
 }
 
 fn part1(input: &str) -> u32 {
-    let mut stack: Vec<FileNode> = vec![FileNode::new_folder(0, "/", None)];
+    let mut stack: Vec<FileNode> = vec![FileNode::new_folder(0, None)];
     let mut dir_map = HashMap::new();
     let mut cur_dir = 0;
 
@@ -108,8 +123,8 @@ fn part1(input: &str) -> u32 {
                                         .as_mut()
                                         .expect("cannot push to file")
                                         .push(new_id);
-                                    stack.push(FileNode::new_folder(new_id, name, Some(cur_dir)));
-                                    dir_map.insert(name.to_string(), new_id);
+                                    stack.push(FileNode::new_folder(new_id, Some(cur_dir)));
+                                    dir_map.insert(name, new_id);
                                 }
                                 _ => {
                                     stack[cur_dir].files
@@ -119,9 +134,8 @@ fn part1(input: &str) -> u32 {
                                     stack.push(
                                         FileNode::new_file(
                                             new_id,
-                                            name,
                                             Some(stack[cur_dir].id),
-                                            file.parse::<u64>().expect("not an int")
+                                            file.parse::<u32>().expect("not an int")
                                         )
                                     );
                                 }
@@ -141,20 +155,21 @@ fn part1(input: &str) -> u32 {
 
     println!("{:?}", stack);
 
-    
+    // stack[0]
 
-    // stack
-    //     .iter()
-    //     .filter(|node| node.size == 0)
-    //     .filter_map(|folder| folder.files.as_ref())
-    //     .map(|files|
-    //         files
-    //             .iter()
-    //             .map(|id| stack[*id].size)
-    //             .sum::<u64>()
-    //     )
-    //     .filter(|&folder_size| folder_size < 100000)
-    //     .sum::<u64>() as u32
+    // match self.files {
+    //     Some(_) => self.size = self.files.iter().map(|file| file.calc_size()).sum(),
+    //     None => ()
+    // }
+    // self.size
+
+    stack
+        .iter()
+        .filter(|node| node.size == 0)
+        // .filter_map(|folder| folder.files.as_ref())
+        .map(|folder|
+            folder.small_folder_size(&stack)
+        ).sum::<u32>() as u32
 }
 
 fn part2(input: &str) -> u32 {
