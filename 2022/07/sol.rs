@@ -4,8 +4,7 @@ use std::collections::HashMap;
 
 fn main() {
     let expect_result_part1 = 95437;
-    // let expect_result_part1 = 95432;
-    let expect_result_part2 = 1;
+    let expect_result_part2 = 24933642;
 
     let filename_example = "ex_input";
     let filename = "input";
@@ -93,7 +92,6 @@ fn part1(input: &str) -> u32 {
     let mut cur_dir = 0;
     let mut cur_path: Vec<String> = vec![];
 
-    // println!("{:?}", stack);
     input
         .split("$ ")
         .skip(2) // skip line 1. We know the topdir is '/'
@@ -113,7 +111,6 @@ fn part1(input: &str) -> u32 {
                             match file {
                                 "dir" => {
                                     stack.push(FileNode::new_folder(new_id, Some(cur_dir)));
-                                    // cur_path.push(name.to_string());
                                     dir_map.insert(cur_path.join("") + name, new_id);
                                     
                                 }
@@ -137,29 +134,90 @@ fn part1(input: &str) -> u32 {
                     // cd xxx
                     let (_, dirname) = instr.split_once(" ").unwrap();
                     cur_path.push(dirname.to_string());
-                    // println!("{:?}", cur_path.join(""));
                     cur_dir = *dir_map.get(&cur_path.join("")).expect("could not find dir");
                     
                 }
             }
         });
 
-    println!("{:?}", stack);
-
     stack
         .iter()
         .filter(|node| node.files.is_some())
-        // .filter_map(|folder| folder.files.as_ref())
         .map(|folder| {
             let size = folder.get_size(&stack);
-            // println!("{:?}", size);
             size
         })
         .filter(|folder_size| *folder_size < 100000)
-        .map(|s| {println!("{:?}", s); s})
         .sum::<u32>() as u32
 }
 
 fn part2(input: &str) -> u32 {
-    input.lines().count() as u32
+    let mut stack: Vec<FileNode> = vec![FileNode::new_folder(0, None)];
+    let mut dir_map = HashMap::new();
+    let mut cur_dir = 0;
+    let mut cur_path: Vec<String> = vec![];
+
+    input
+        .split("$ ")
+        .skip(2) // skip line 1. We know the topdir is '/'
+        .filter_map(|cmd| cmd.split_once("\n"))
+        .for_each(|(instr, output)| {
+            match instr {
+                "ls" => {
+                    output
+                        .lines()
+                        .filter_map(|line| line.split_once(" "))
+                        .for_each(|(file, name)| {
+                            let new_id = stack.len();
+                            stack[cur_dir].files
+                                .as_mut()
+                                .expect("cannot push to file")
+                                .push(new_id);
+                            match file {
+                                "dir" => {
+                                    stack.push(FileNode::new_folder(new_id, Some(cur_dir)));
+                                    dir_map.insert(cur_path.join("") + name, new_id);
+                                    
+                                }
+                                _ => {
+                                    stack.push(
+                                        FileNode::new_file(
+                                            new_id,
+                                            Some(stack[cur_dir].id),
+                                            file.parse::<u32>().expect("not an int")
+                                        )
+                                    );
+                                }
+                            }
+                        });
+                }
+                "cd .." => {
+                    cur_dir = stack[cur_dir].parent.unwrap();
+                    cur_path.pop();
+                }
+                _ => {
+                    // cd xxx
+                    let (_, dirname) = instr.split_once(" ").unwrap();
+                    cur_path.push(dirname.to_string());
+                    cur_dir = *dir_map.get(&cur_path.join("")).expect("could not find dir");
+                    
+                }
+            }
+        });
+
+    let disk_space = 70000000;
+    let required_space = 30000000;
+
+    let used_space = disk_space - stack[0].get_size(&stack);
+    let required_space = required_space - used_space;
+
+    stack
+        .iter()
+        .filter(|node| node.files.is_some())
+        .map(|folder| {
+            let size = folder.get_size(&stack);
+            size
+        })
+        .filter(|folder_size| *folder_size > required_space)
+        .min().unwrap() as u32
 }
