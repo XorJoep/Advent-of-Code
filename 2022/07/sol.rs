@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 fn main() {
     let expect_result_part1 = 95437;
+    // let expect_result_part1 = 95432;
     let expect_result_part2 = 1;
 
     let filename_example = "ex_input";
@@ -74,35 +75,23 @@ impl FileNode {
     pub fn get_size(&self, stack: &Vec<FileNode>) -> u32 {
         match self.files {
             Some(_) => {
-                self.files.as_ref().unwrap()
+                self.files
+                    .as_ref()
+                    .unwrap()
                     .iter()
                     .map(|file_id| stack[*file_id].get_size(stack))
                     .sum()
             }
-            None => self.size
+            None => self.size,
         }
     }
-
-    pub fn small_folder_size(&self, stack: &Vec<FileNode>) -> u32 {
-        match self.files {
-            Some(_) => {
-                let size = self.get_size(stack);
-                if size < 100000 {
-                    size
-                }
-                else  { 0 }
-            }
-            None => 0
-        }
-    }
-
-    // pub fn add_folder(stack: &mut Vec<FileNode>, name: &str, parent: Option<usize>) {}
 }
 
 fn part1(input: &str) -> u32 {
     let mut stack: Vec<FileNode> = vec![FileNode::new_folder(0, None)];
     let mut dir_map = HashMap::new();
     let mut cur_dir = 0;
+    let mut cur_path: Vec<String> = vec![];
 
     // println!("{:?}", stack);
     input
@@ -117,20 +106,18 @@ fn part1(input: &str) -> u32 {
                         .filter_map(|line| line.split_once(" "))
                         .for_each(|(file, name)| {
                             let new_id = stack.len();
+                            stack[cur_dir].files
+                                .as_mut()
+                                .expect("cannot push to file")
+                                .push(new_id);
                             match file {
                                 "dir" => {
-                                    stack[cur_dir].files
-                                        .as_mut()
-                                        .expect("cannot push to file")
-                                        .push(new_id);
                                     stack.push(FileNode::new_folder(new_id, Some(cur_dir)));
-                                    dir_map.insert(name, new_id);
+                                    // cur_path.push(name.to_string());
+                                    dir_map.insert(cur_path.join("") + name, new_id);
+                                    
                                 }
                                 _ => {
-                                    stack[cur_dir].files
-                                        .as_mut()
-                                        .expect("cannot push to file")
-                                        .push(new_id);
                                     stack.push(
                                         FileNode::new_file(
                                             new_id,
@@ -144,32 +131,33 @@ fn part1(input: &str) -> u32 {
                 }
                 "cd .." => {
                     cur_dir = stack[cur_dir].parent.unwrap();
+                    cur_path.pop();
                 }
                 _ => {
                     // cd xxx
                     let (_, dirname) = instr.split_once(" ").unwrap();
-                    cur_dir = *dir_map.get(dirname).expect("could not find dir");
+                    cur_path.push(dirname.to_string());
+                    // println!("{:?}", cur_path.join(""));
+                    cur_dir = *dir_map.get(&cur_path.join("")).expect("could not find dir");
+                    
                 }
             }
         });
 
     println!("{:?}", stack);
 
-    // stack[0]
-
-    // match self.files {
-    //     Some(_) => self.size = self.files.iter().map(|file| file.calc_size()).sum(),
-    //     None => ()
-    // }
-    // self.size
-
     stack
         .iter()
-        .filter(|node| node.size == 0)
+        .filter(|node| node.files.is_some())
         // .filter_map(|folder| folder.files.as_ref())
-        .map(|folder|
-            folder.small_folder_size(&stack)
-        ).sum::<u32>() as u32
+        .map(|folder| {
+            let size = folder.get_size(&stack);
+            // println!("{:?}", size);
+            size
+        })
+        .filter(|folder_size| *folder_size < 100000)
+        .map(|s| {println!("{:?}", s); s})
+        .sum::<u32>() as u32
 }
 
 fn part2(input: &str) -> u32 {
