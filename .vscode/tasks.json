@@ -6,7 +6,7 @@
         {
             "label": "build and run",
             "type": "shell",
-            "command": "cd ${fileDirname}; rustc ${fileBasename} && ./${fileBasenameNoExtension}",
+            "command": "cd ${fileDirname}; rustc sol.rs && ./sol",
             "problemMatcher": [],
             "group": {
                 "kind": "build",

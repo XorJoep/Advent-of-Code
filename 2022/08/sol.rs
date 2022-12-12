@@ -1,8 +1,10 @@
 use std::fs;
 use std::time::Instant;
 
+mod matrix;
+
 fn main() {
-    let expect_result_part1 = 1;
+    let expect_result_part1 = 21;
     let expect_result_part2 = 1;
 
     let filename_example = "ex_input";
@@ -43,8 +45,16 @@ fn execute_part(part_fn: fn(&str) -> u32, input: &str, example_result: u32) -> b
     }
 }
 
+
+
 fn part1(input: &str) -> u32 {
-    input.lines().count() as u32
+    let mut matrix = matrix::Matrix::new(input);
+        
+    matrix.print();    
+    let visibility = matrix.calc_visibility();
+    matrix.print_visible();
+    // matrix.get_rows().iter_mut().for_each(|row| calc_visibility(row));
+    visibility
 }
 
 fn part2(input: &str) -> u32 {
