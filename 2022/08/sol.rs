@@ -5,7 +5,7 @@ mod matrix;
 
 fn main() {
     let expect_result_part1 = 21;
-    let expect_result_part2 = 1;
+    let expect_result_part2 = 8;
 
     let filename_example = "ex_input";
     let filename = "input";
@@ -45,18 +45,19 @@ fn execute_part(part_fn: fn(&str) -> u32, input: &str, example_result: u32) -> b
     }
 }
 
-
-
 fn part1(input: &str) -> u32 {
     let mut matrix = matrix::Matrix::new(input);
-        
-    matrix.print();    
+
+    // matrix.print();
     let visibility = matrix.calc_visibility();
-    matrix.print_visible();
-    // matrix.get_rows().iter_mut().for_each(|row| calc_visibility(row));
+    // matrix.print_visible();
     visibility
 }
 
 fn part2(input: &str) -> u32 {
-    input.lines().count() as u32
+    let matrix = matrix::Matrix::new(input);
+
+    let max_tree = matrix.calc_2();
+
+    max_tree
 }

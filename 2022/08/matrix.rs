@@ -29,7 +29,7 @@ impl Matrix {
                     line
                         .chars()
                         .filter_map(|c| c.to_digit(10))
-                        .map(|c| Tree { visible: false, height: c })
+                        .map(|c| Tree { visible: false, height: c + 1 })
                 )
                 .collect(),
         }
@@ -43,7 +43,7 @@ impl Matrix {
         println!("------------");
         for y in 0..self.rows {
             for x in 0..self.columns {
-                print!("{}", self.get(x, y).height);
+                print!("{}", self.get(x, y).height - 1);
             }
             println!("");
         }
@@ -82,80 +82,153 @@ impl Matrix {
             .count() as u32
     }
 
-    pub fn get_rows(&mut self) -> Vec<&mut [Tree]> {
-        self.values.chunks_mut(self.columns).collect()
+    pub fn get_rows(&self) -> Vec<Vec<u32>> {
+        (0..self.columns)
+            .map(|c| (0..self.rows).map(|r| self.values[self.columns * c + r].height).collect())
+            .collect()
     }
 
-    // pub fn row_visibility(row: &[Tree]) -> usize {}
+    pub fn get_cols(&self) -> Vec<Vec<usize>> {
+        (0..self.columns).map(|c| (0..self.rows).map(|r| self.columns * r + c).collect()).collect()
+    }
+
+    pub fn get_cols2(&self) -> Vec<Vec<u32>> {
+        (0..self.columns)
+            .map(|c| (0..self.rows).map(|r| self.values[self.columns * r + c].height).collect())
+            .collect()
+    }
 
     pub fn calc_visibility(&mut self) -> u32 {
         self.values.chunks_mut(self.columns).for_each(|row| {
-            let mut visibility = row
-                .iter()
-                .zip(row.iter().skip(1))
-                .take_while(|&(t1, t2)| t1.height < t2.height)
-                .count();
+            let mut highest = 0;
+            row.iter_mut().for_each(|t| (
+                if t.height > highest {
+                    highest = t.height;
+                    t.visible = true;
+                }
+            ));
 
-            row.iter_mut()
-                .take(visibility + 1)
-                .for_each(|t1| {
-                    t1.visible = true;
-                });
-
-            visibility = row
-                .iter()
-                .rev()
-                .zip(row.iter().rev().skip(1))
-                .take_while(|&(t1, t2)| t1.height < t2.height)
-                .count();
-
+            highest = 0;
             row.iter_mut()
                 .rev()
-                .take(visibility + 1)
-                .for_each(|t1| {
-                    t1.visible = true;
-                });
+                .for_each(|t| (
+                    if t.height > highest {
+                        highest = t.height;
+                        t.visible = true;
+                    }
+                ));
         });
 
-        let column_indices: Vec<Vec<usize>> = (0..self.columns)
-            .map(|c| (0..self.rows).map(|r| self.columns * r + c).collect())
-            .collect();
-
-        column_indices.iter().for_each(|column| {
-            let mut visibility = column
-                .iter()
-                .rev()
-                .zip(column.iter().rev().skip(1))
-                .take_while(|&(t1, t2)| self.values[*t1].height < self.values[*t2].height)
-                .count();
-
-            column
-                .iter()
-                .rev()
-                .take(visibility + 1)
-                .for_each(|t1| {
-                    self.values[*t1].visible = true;
-                });
-
-            visibility = column
-                .iter()
-                .zip(column.iter().rev().skip(1))
-                .take_while(|&(t1, t2)| self.values[*t1].height < self.values[*t2].height)
-                .count();
-
-            column
-                .iter()
-                .take(visibility + 1)
-                .for_each(|t1| {
-                    self.values[*t1].visible = true;
-                });
-        });
-
-        // println!("{:?}", column_indices);
+        self.get_cols()
+            .iter()
+            .for_each(|column| {
+                let mut highest = 0;
+                column.iter().for_each(|t| (
+                    if self.values[*t].height > highest {
+                        highest = self.values[*t].height;
+                        self.values[*t].visible = true;
+                    }
+                ));
+                highest = 0;
+                column
+                    .iter()
+                    .rev()
+                    .for_each(|t| (
+                        if self.values[*t].height > highest {
+                            highest = self.values[*t].height;
+                            self.values[*t].visible = true;
+                        }
+                    ));
+            });
 
         self.values
             .iter()
             .filter(|t| t.visible)
             .count() as u32
+    }
+
+    pub fn calc_2(&self) -> u32 {
+        let rows = self.get_rows();
+        let cols = self.get_cols2();
+
+        (0..self.columns)
+            .map(|c|
+                (0..self.rows)
+                    .map(|r| {
+                        let tree_height = rows[r][c];
+                        let mut biggest = 0;
+                        let east = rows[r][c + 1..]
+                            .iter()
+                            .take_while(|&t| {
+                                if tree_height <= biggest {
+                                    false
+                                } else if biggest <= *t {
+                                    biggest = *t;
+                                    true
+                                } else if *t < biggest {
+                                    true
+                                } else {
+                                    false
+                                }
+                            })
+                            .count();
+                        biggest = 0;
+                        let west = rows[r][..c]
+                            .iter()
+                            .rev()
+                            .take_while(|&t| {
+                                if tree_height <= biggest {
+                                    false
+                                } else if biggest <= *t {
+                                    biggest = *t;
+                                    true
+                                } else if *t < biggest {
+                                    true
+                                } else {
+                                    false
+                                }
+                            })
+                            .count();
+                        biggest = 0;
+                        let south = cols[c][r + 1..]
+                            .iter()
+                            .take_while(|&t| {
+                                if tree_height <= biggest {
+                                    false
+                                } else if biggest <= *t {
+                                    biggest = *t;
+                                    true
+                                } else if *t < biggest {
+                                    true
+                                } else {
+                                    false
+                                }
+                            })
+                            .count();
+                        biggest = 0;
+                        let north = cols[c][..r]
+                            .iter()
+                            .rev()
+                            .take_while(|&t| {
+                                if tree_height <= biggest {
+                                    false
+                                } else if biggest <= *t {
+                                    biggest = *t;
+                                    true
+                                } else if *t < biggest {
+                                    true
+                                } else {
+                                    false
+                                }
+                            })
+                            .count();
+
+                        north * east * south * west;
+                    })
+                    .max()
+                    .unwrap()
+            )
+            .max()
+            .unwrap() as u32
     }
 }
