@@ -3,7 +3,7 @@ use std::time::Instant;
 
 fn main() {
     let expect_result_part1 = 161;
-    let expect_result_part2 = 1;
+    let expect_result_part2 = 48;
 
     let filename_example = "ex_input";
     let filename = "input";
@@ -53,12 +53,68 @@ fn part1(input: &str) -> u32 {
         .map(|mat| {
             mat.iter()
                 .skip(1)
-                .map(|g| g.unwrap().as_str().parse::<u32>().expect("not int"))
+                .filter_map(|g| g)
+                .map(|g| g.as_str().parse::<u32>().expect("not int"))
                 .fold(1, |acc, d| acc * d)
         })
         .sum()
 }
+#[derive(Debug)]
+enum Operation {
+    Mul(i32, i32),
+    Do,
+    Dont,
+}
+#[derive(Debug)]
+pub struct Instruction {
+    operation: Operation,
+    start_pos: usize,
+}
 
 fn part2(input: &str) -> u32 {
-    input.lines().count() as u32
+    let mut instructions: Vec<Instruction> = vec![];
+    let re_mul = Regex::new(r"mul\((\d+),(\d+)\)").unwrap();
+    let re_do = Regex::new(r"do\(\)").unwrap();
+    let re_dont = Regex::new(r"don\'t\(\)").unwrap();
+
+    re_mul.captures_iter(input).for_each(|mat| {
+        instructions.push(Instruction {
+            operation: Operation::Mul {
+                0: mat.get(1).expect("").as_str().parse().unwrap(),
+                1: mat.get(2).expect("").as_str().parse().unwrap(),
+            },
+            start_pos: mat.get(0).expect("").start(),
+        });
+    });
+
+    re_do.find_iter(input).for_each(|mat| {
+        instructions.push(Instruction {
+            operation: Operation::Do,
+            start_pos: mat.start(),
+        });
+    });
+
+    re_dont.find_iter(input).for_each(|mat| {
+        instructions.push(Instruction {
+            operation: Operation::Dont,
+            start_pos: mat.start(),
+        });
+    });
+
+    instructions.sort_by_key(|item| item.start_pos);
+    
+    instructions
+        .iter()
+        .fold((0, true), |(acc, todo), op| match op.operation {
+            Operation::Mul(x, y) => {
+                if todo {
+                    (acc + x * y, todo)
+                } else {
+                    (acc, todo)
+                }
+            }
+            Operation::Do => (acc, true),
+            Operation::Dont => (acc, false),
+        })
+        .0 as u32
 }
