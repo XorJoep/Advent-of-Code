@@ -59,9 +59,7 @@ fn part1(input: &str) -> u32 {
             rules_map.entry(l).or_insert_with(Vec::new).push(r);
         });
 
-    let mut total: u32 = 0;
-
-    for line in page_numbers.lines() {
+    page_numbers.lines().filter_map(|line|{
         let pages: Vec<u32> = line.split(",").map(|n| n.parse().expect("?")).collect();
 
         let is_ordered = pages.iter().enumerate().all(|(i, p)| {
@@ -73,14 +71,37 @@ fn part1(input: &str) -> u32 {
         });
 
         if is_ordered {
-            let middle_num = &pages[pages.len()/2];
-            total += middle_num;
-        }
-    }
-
-    total
+            Some(pages)
+        } else {None}
+    }).map(|pages| pages[pages.len()/2]).sum()
 }
 
 fn part2(input: &str) -> u32 {
-    input.lines().count() as u32
+    let (rules, page_numbers) = input.split_once("\n\n").unwrap();
+
+    let mut rules_map: HashMap<u32, Vec<u32>> = HashMap::new();
+
+    rules
+        .lines()
+        .filter_map(|l| l.split_once("|"))
+        .for_each(|(l, r)| {
+            let (l, r) = (l.parse().unwrap(), r.parse().unwrap());
+            rules_map.entry(l).or_insert_with(Vec::new).push(r);
+        });
+
+    page_numbers.lines().filter_map(|line|{
+        let pages: Vec<u32> = line.split(",").map(|n| n.parse().expect("?")).collect();
+
+        let is_ordered = pages.iter().enumerate().all(|(i, p)| {
+            if let Some(rule) = rules_map.get(p) {
+                rule.iter().all(|r| !&pages[0..i].contains(r))
+            } else {
+                true
+            }
+        });
+
+        if is_ordered {
+            None
+        } else {Some(pages)}
+    }).count() as u32
 }
