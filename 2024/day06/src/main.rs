@@ -1,11 +1,12 @@
 use std::fs;
+use std::hash::Hash;
 use std::time::Instant;
 
 use std::collections::HashSet;
 
 fn main() {
     let expect_result_part1 = 41;
-    let expect_result_part2 = 1;
+    let expect_result_part2 = 6;
 
     let filename_example = "ex_input";
     let filename = "input";
@@ -47,6 +48,7 @@ fn execute_part(part_fn: fn(&str) -> u32, input: &str, example_result: u32) -> b
     }
 }
 
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
 enum Direction {
     Up,
     Down,
@@ -107,7 +109,7 @@ fn part1(input: &str) -> u32 {
     loop {
         let (new_x, new_y) = current_direction.take_step((pos_x, pos_y));
         if new_x < 0 || new_y < 0 || new_x >= x_size || new_y >= y_size {
-            println!("Left the maze!");
+            // println!("Left the maze!");
             break;
         } else {
             match grid[new_y as usize][new_x as usize] {
@@ -121,6 +123,110 @@ fn part1(input: &str) -> u32 {
     seen_positions.len() as u32
 }
 
+#[derive(Debug, Eq, PartialEq, Hash)]
+struct Step {
+    x: i32,
+    y: i32,
+    dir: Direction,
+}
+
+fn can_loop(grid: Vec<Vec<char>>, start: Step) -> bool {
+    let mut seen_positions = HashSet::new();
+    let x_size = grid[0].len() as i32;
+    let y_size = grid.len() as i32;
+
+    let (mut pos_x, mut pos_y) = (start.x, start.y);
+
+    let mut current_direction = start.dir;
+
+    seen_positions.insert(Step {
+        x: pos_x,
+        y: pos_y,
+        dir: current_direction.clone(),
+    });
+
+    loop {
+        let (new_x, new_y) = current_direction.take_step((pos_x, pos_y));
+        if new_x < 0 || new_y < 0 || new_x >= x_size || new_y >= y_size {
+            // println!("Left the maze!");
+            return false;
+        } else {
+            match grid[new_y as usize][new_x as usize] {
+                '.' | '^' => (pos_x, pos_y) = (new_x, new_y),
+                '#' => current_direction = current_direction.turn(),
+                _ => panic!("unknown char!"),
+            }
+            let step = Step {
+                x: pos_x,
+                y: pos_y,
+                dir: current_direction.clone(),
+            };
+            if seen_positions.contains(&step) {
+                return true;
+            } else {
+                seen_positions.insert(step);
+            }
+        }
+    }
+}
+
 fn part2(input: &str) -> u32 {
-    input.lines().count() as u32
+    let grid: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
+    let x_size = grid[0].len() as i32;
+    let y_size = grid.len() as i32;
+
+    let start_location = grid
+        .iter()
+        .enumerate()
+        .find_map(|(y, l)| {
+            if let Some(x) = l.iter().position(|&c| c == '^') {
+                Some((x as i32, y as i32))
+            } else {
+                None
+            }
+        })
+        .unwrap();
+
+    let (mut pos_x, mut pos_y) = start_location;
+
+    let mut current_direction = Direction::Up;
+
+    let mut seen_positions = HashSet::new();
+    seen_positions.insert(start_location);
+
+    let mut loops = HashSet::new();
+
+    loop {
+        let (new_x, new_y) = current_direction.take_step((pos_x, pos_y));
+        if new_x < 0 || new_y < 0 || new_x >= x_size || new_y >= y_size {
+            break;
+        } else {
+            match grid[new_y as usize][new_x as usize] {
+                '.' => {
+                    let mut copied_grid = grid.clone();
+                    copied_grid[new_y as usize][new_x as usize] = '#';
+                    if !seen_positions.contains(&(new_x, new_y))
+                        && can_loop(
+                            copied_grid,
+                            Step {
+                                x: pos_x,
+                                y: pos_y,
+                                dir: current_direction.clone(),
+                            },
+                        )
+                    {
+                        println!("{new_x}, {new_y} caused loop");
+                        loops.insert((new_x, new_y));
+                    };
+                    (pos_x, pos_y) = (new_x, new_y);
+                }
+                '^' => (pos_x, pos_y) = (new_x, new_y),
+                '#' => current_direction = current_direction.turn(),
+                _ => panic!("unknown char!"),
+            }
+            seen_positions.insert((new_x, new_y));
+        }
+    }
+
+    loops.len() as u32
 }
