@@ -4,7 +4,7 @@ use std::time::Instant;
 
 fn main() {
     let expect_result_part1 = 143;
-    let expect_result_part2 = 1;
+    let expect_result_part2 = 123;
 
     let filename_example = "ex_input";
     let filename = "input";
@@ -59,21 +59,27 @@ fn part1(input: &str) -> u32 {
             rules_map.entry(l).or_insert_with(Vec::new).push(r);
         });
 
-    page_numbers.lines().filter_map(|line|{
-        let pages: Vec<u32> = line.split(",").map(|n| n.parse().expect("?")).collect();
+    page_numbers
+        .lines()
+        .filter_map(|line| {
+            let pages: Vec<u32> = line.split(",").map(|n| n.parse().expect("?")).collect();
 
-        let is_ordered = pages.iter().enumerate().all(|(i, p)| {
-            if let Some(rule) = rules_map.get(p) {
-                rule.iter().all(|r| !&pages[0..i].contains(r))
+            let is_ordered = pages.iter().enumerate().all(|(i, p)| {
+                if let Some(rule) = rules_map.get(p) {
+                    rule.iter().all(|r| !&pages[0..i].contains(r))
+                } else {
+                    true
+                }
+            });
+
+            if is_ordered {
+                Some(pages)
             } else {
-                true
+                None
             }
-        });
-
-        if is_ordered {
-            Some(pages)
-        } else {None}
-    }).map(|pages| pages[pages.len()/2]).sum()
+        })
+        .map(|pages| pages[pages.len() / 2])
+        .sum()
 }
 
 fn part2(input: &str) -> u32 {
@@ -89,19 +95,52 @@ fn part2(input: &str) -> u32 {
             rules_map.entry(l).or_insert_with(Vec::new).push(r);
         });
 
-    page_numbers.lines().filter_map(|line|{
-        let pages: Vec<u32> = line.split(",").map(|n| n.parse().expect("?")).collect();
+    page_numbers
+        .lines()
+        .filter_map(|line| {
+            let mut pages: Vec<u32> = line.split(",").map(|n| n.parse().expect("?")).collect();
 
-        let is_ordered = pages.iter().enumerate().all(|(i, p)| {
-            if let Some(rule) = rules_map.get(p) {
-                rule.iter().all(|r| !&pages[0..i].contains(r))
-            } else {
-                true
+            let is_ordered = pages.iter().enumerate().all(|(i, p)| {
+                if let Some(rule) = rules_map.get(p) {
+                    rule.iter().all(|r| !&pages[0..i].contains(r))
+                } else {
+                    true
+                }
+            });
+
+            if is_ordered {
+                return None;
             }
-        });
 
-        if is_ordered {
-            None
-        } else {Some(pages)}
-    }).count() as u32
+            loop {
+                for p_idx in 0..pages.len() {
+                    if let Some(rule) = rules_map.get(&pages[p_idx]) {
+                        rule.iter().for_each(|r| {
+                            if let Some(idx) = &pages[0..p_idx].iter().position(|x| x == r)
+                            {
+                                // swap
+                                pages.insert(p_idx + 1, pages[*idx]);
+                                pages.remove(*idx);
+                            }
+                        })
+                    }
+                }
+
+                let is_ordered = pages.iter().enumerate().all(|(i, p)| {
+                    if let Some(rule) = rules_map.get(p) {
+                        rule.iter().all(|r| !&pages[0..i].contains(r))
+                    } else {
+                        true
+                    }
+                });
+
+                if is_ordered {
+                    break;
+                }
+            }
+
+            Some(pages)
+        })
+        .map(|pages| pages[pages.len() / 2])
+        .sum()
 }
