@@ -3,7 +3,7 @@ use std::time::Instant;
 
 fn main() {
     let expect_result_part1 = 1928;
-    let expect_result_part2 = 1;
+    let expect_result_part2 = 2858;
 
     let filename_example = "ex_input";
     let filename = "input";
@@ -48,43 +48,108 @@ fn execute_part(part_fn: fn(&str) -> u64, input: &str, example_result: u64) -> b
 fn part1(input: &str) -> u64 {
     let mut buffer: Vec<Option<usize>> = Vec::new();
     input
-        .lines()
-        .next()
-        .expect("")
         .chars()
         .map(|c| c.to_digit(10).unwrap() as usize)
         .enumerate()
-        .for_each(|(i,c)| {
-            if i%2 == 0 {
-                buffer.extend(std::iter::repeat(Some(i/2)).take(c))
+        .for_each(|(i, c)| {
+            if i % 2 == 0 {
+                buffer.extend(std::iter::repeat(Some(i / 2)).take(c))
             } else {
                 buffer.extend(std::iter::repeat(None).take(c))
             }
         });
-    
-    let mut front_ptr = 0 as i32;
-    let mut back_ptr = buffer.len() as i32 - 1;
 
-    while front_ptr < back_ptr {
-        if let c = buffer[back_ptr as usize] {
-            while front_ptr < back_ptr {
-                if !buffer[front_ptr as usize].is_some() {
-                    buffer[front_ptr as usize] = c;
-                    buffer[back_ptr as usize] = None;
-                    back_ptr -= 1;
-                    break;
-                } else {
-                    front_ptr += 1;
-                }
+    let mut front_ptr = 0 as usize;
+    let mut back_ptr = buffer.len() as usize - 1;
+
+    let mut sum = 0;
+
+    while front_ptr <= back_ptr {
+        match buffer[front_ptr] {
+            Some(x) => {
+                sum += x * front_ptr;
+                front_ptr += 1
             }
-        } else {
-            back_ptr -= 1;
+            None => {
+                match buffer[back_ptr] {
+                    None => {}
+                    Some(x) => {
+                        sum += x * front_ptr;
+                        front_ptr += 1
+                    }
+                }
+                back_ptr -= 1
+            }
         }
     }
 
-    buffer.iter().filter_map(|&c| c).enumerate().map(|(i,c)| (i*c) as u64).sum()
+    sum as u64
 }
 
 fn part2(input: &str) -> u64 {
-    input.lines().count() as u64
+    let mut buffer: Vec<Option<usize>> = Vec::new();
+    input
+        .chars()
+        .map(|c| c.to_digit(10).unwrap() as usize)
+        .enumerate()
+        .for_each(|(i, c)| {
+            if i % 2 == 0 {
+                buffer.extend(std::iter::repeat(Some(i / 2)).take(c))
+            } else {
+                buffer.extend(std::iter::repeat(None).take(c))
+            }
+        });
+
+    let last_num: usize = buffer.iter().rev().find_map(|s| *s).unwrap();
+
+    for i in (0..=last_num).rev() {
+        let data_start = buffer
+            .iter()
+            .position(|c| match c {
+                Some(x) => *x == i,
+                _ => false,
+            })
+            .unwrap();
+
+        let data_size = buffer
+            .iter()
+            .skip(data_start)
+            .take_while(|s| match s {
+                Some(x) => *x == i,
+                _ => false,
+            })
+            .count();
+
+        let mut counter = 0;
+        if let Some(empty_data_spot) = buffer.iter().position(|s| match s {
+            Some(_) => {
+                counter = 0;
+                false
+            }
+            None => {
+                counter += 1;
+                if counter == data_size {
+                    true
+                } else {
+                    false
+                }
+            }
+        }) {
+            if empty_data_spot <= data_start {
+                for j in 0..data_size {
+                    buffer[data_start + j] = None;
+                    buffer[empty_data_spot + j - data_size + 1] = Some(i);
+                }
+            }
+        }
+    }
+
+    buffer
+        .iter()
+        .enumerate()
+        .map(|(i, c)| match c {
+            Some(x) => i * x,
+            _ => 0,
+        })
+        .sum::<usize>() as u64
 }
