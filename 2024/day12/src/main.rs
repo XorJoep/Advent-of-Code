@@ -3,8 +3,8 @@ use std::fs;
 use std::time::Instant;
 
 fn main() {
-    let expect_result_part1 = 1930;
-    let expect_result_part2 = 1;
+    let expect_result_part1 = 0;
+    let expect_result_part2 = 1206;
 
     let filename_example = "ex_input";
     let filename = "input";
@@ -73,7 +73,16 @@ impl Direction {
         ]
     }
 
-    fn take_step(&self, position: (usize, usize)) -> (i32, i32) {
+    fn all_corners() -> &'static [(Self, Self)] {
+        &[
+            (Direction::Up, Direction::Right),
+            (Direction::Right, Direction::Down),
+            (Direction::Down, Direction::Left),
+            (Direction::Left, Direction::Up),
+        ]
+    }
+
+    fn take_step(&self, position: (i32, i32)) -> (i32, i32) {
         let (dx, dy) = self.step();
         (position.0 as i32 + dx, position.1 as i32 + dy)
     }
@@ -85,7 +94,7 @@ impl Direction {
     ) -> Vec<(usize, usize)> {
         Self::all_directions()
             .iter()
-            .map(|dir| dir.take_step(position))
+            .map(|dir| dir.take_step((position.0 as i32, position.1 as i32)))
             .filter_map(|new_pos| {
                 if new_pos.0 < 0
                     || new_pos.1 < 0
@@ -157,13 +166,13 @@ fn part1(input: &str) -> usize {
         for loc in &v {
             count += Direction::all_directions()
                 .iter()
-                .map(|dir| dir.take_step(*loc))
+                .map(|dir| dir.take_step((loc.0 as i32, loc.1 as i32)))
                 .filter(|new_pos| {
                     new_pos.0 < 0
                         || new_pos.1 < 0
                         || new_pos.0 >= cols as i32
                         || new_pos.1 >= rows as i32
-                        || grid[new_pos.1 as usize][new_pos.0  as usize] != grid[k.1][k.0]
+                        || grid[new_pos.1 as usize][new_pos.0 as usize] != grid[k.1][k.0]
                 })
                 .count();
         }
@@ -174,5 +183,72 @@ fn part1(input: &str) -> usize {
 }
 
 fn part2(input: &str) -> usize {
-    input.lines().count()
+    let grid: Vec<Vec<char>> = input.lines().map(|line| line.chars().collect()).collect();
+
+    let rows = grid.len();
+    let cols = grid[0].len();
+
+    let mut seen: HashSet<(usize, usize)> = HashSet::new();
+    let mut gardens: HashMap<(usize, usize), HashSet<(usize, usize)>> = HashMap::new();
+
+    for x in 0..cols {
+        for y in 0..rows {
+            if seen.contains(&(x, y)) {
+                continue;
+            }
+
+            let regions = Direction::find_all((x, y), &grid);
+            seen.extend(regions.clone());
+            gardens.insert((x, y), regions);
+        }
+    }
+
+    let mut total = 0;
+
+    for (k, v) in gardens {
+        let mut count = 0;
+        for loc in &v {
+            count += Direction::all_corners()
+                .iter()
+                .map(|(dir1, dir2)| {
+                    (
+                        dir1.take_step((loc.0 as i32, loc.1 as i32)),
+                        dir2.take_step((loc.0 as i32, loc.1 as i32)),
+                        dir1.take_step(dir2.take_step((loc.0 as i32, loc.1 as i32))),
+                    )
+                })
+                .filter(|(new_pos1, new_pos2, new_pos3)| {
+                    let new_pos1_out_of_bounds = new_pos1.0 < 0
+                        || new_pos1.1 < 0
+                        || new_pos1.0 >= cols as i32
+                        || new_pos1.1 >= rows as i32;
+
+                    let new_pos2_out_of_bounds = new_pos2.0 < 0
+                        || new_pos2.1 < 0
+                        || new_pos2.0 >= cols as i32
+                        || new_pos2.1 >= rows as i32;
+                        
+                    let new_pos3_out_of_bounds = new_pos3.0 < 0
+                        || new_pos3.1 < 0
+                        || new_pos3.0 >= cols as i32
+                        || new_pos3.1 >= rows as i32;
+
+                    let new_pos1_is_same_as_current = !new_pos1_out_of_bounds
+                        && grid[new_pos1.1 as usize][new_pos1.0 as usize] == grid[k.1][k.0];
+                    let new_pos2_is_same_as_current = !new_pos2_out_of_bounds
+                        && grid[new_pos2.1 as usize][new_pos2.0 as usize] == grid[k.1][k.0];
+                    let new_pos3_is_same_as_current = !new_pos3_out_of_bounds
+                        && grid[new_pos3.1 as usize][new_pos3.0 as usize] == grid[k.1][k.0];
+
+                    (!new_pos1_is_same_as_current && !new_pos2_is_same_as_current)
+                        || (new_pos1_is_same_as_current
+                            && new_pos2_is_same_as_current
+                            && !new_pos3_is_same_as_current)
+                })
+                .count();
+        }
+        total += count * v.len();
+    }
+
+    total
 }
