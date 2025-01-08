@@ -1,6 +1,6 @@
+use std::collections::HashMap;
 use std::fs;
 use std::time::Instant;
-use std::collections::HashMap;
 
 fn main() {
     let expect_result_part1 = 55312;
@@ -83,7 +83,9 @@ fn part2(input: &str) -> u64 {
             });
 
     for _ in 0..75 {
-        nums = nums.into_iter().fold(HashMap::new(), |mut acc, (num, count)| {
+        nums = nums
+            .into_iter()
+            .fold(HashMap::new(), |mut acc, (num, count)| {
                 if num == 0 {
                     *acc.entry(1).or_insert(0) += count;
                 } else if num.to_string().len() % 2 == 0 {
@@ -95,8 +97,7 @@ fn part2(input: &str) -> u64 {
                     *acc.entry(num * 2024).or_insert(0) += count;
                 }
                 acc
-        });
-
+            });
     }
 
     nums.values().sum::<u64>() as u64

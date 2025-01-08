@@ -24,7 +24,7 @@ fn main() {
     let _ = succes && execute_part(part2, &contents, 0);
 }
 
-fn execute_part(part_fn: fn(&str) -> u32, input: &str, example_result: u32) -> bool {
+fn execute_part(part_fn: fn(&str) -> usize, input: &str, example_result: usize) -> bool {
     let start = Instant::now();
     let result = part_fn(&input);
 
@@ -43,10 +43,10 @@ fn execute_part(part_fn: fn(&str) -> u32, input: &str, example_result: u32) -> b
     }
 }
 
-fn part1(input: &str) -> u32 {
-    input.lines().count() as u32
+fn part1(input: &str) -> usize {
+    input.lines().count()
 }
 
-fn part2(input: &str) -> u32 {
-    input.lines().count() as u32
+fn part2(input: &str) -> usize {
+    input.lines().count()
 }

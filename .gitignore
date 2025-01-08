@@ -5,3 +5,5 @@ sol.pdb
 sol
 
 target
+Cargo.*
+*input

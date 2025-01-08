@@ -124,12 +124,6 @@ fn part1(input: &str) -> u32 {
         .map(|coord| (coord, HashSet::from([coord])))
         .collect();
 
-    // let mut visited: HashSet<(usize, usize)>;
-
-    // println!("{grid:?}");
-
-    // println!("{positions:?}");
-
     for i in (0..9).rev() {
         let mut new_positions: HashMap<(usize, usize), HashSet<(usize, usize)>>  = HashMap::new();
         positions.into_iter().for_each(|(k, v)| {
@@ -145,10 +139,7 @@ fn part1(input: &str) -> u32 {
                 });
             });
             positions = new_positions.clone();
-            // println!("{i}: {positions:?}");
     }
-
-    // println!("{positions:?}");
 
     positions.iter().map(|(_, v)| v.len()).sum::<usize>() as u32
 }
@@ -175,12 +166,6 @@ fn part2(input: &str) -> u32 {
         .map(|coord| (coord, Vec::from([coord])))
         .collect();
 
-    // let mut visited: HashSet<(usize, usize)>;
-
-    // println!("{grid:?}");
-
-    // println!("{positions:?}");
-
     for i in (0..9).rev() {
         let mut new_positions: HashMap<(usize, usize), Vec<(usize, usize)>>  = HashMap::new();
         positions.into_iter().for_each(|(k, v)| {
@@ -196,10 +181,7 @@ fn part2(input: &str) -> u32 {
                 });
             });
             positions = new_positions.clone();
-            // println!("{i}: {positions:?}");
     }
-
-    // println!("{positions:?}");
 
     positions.iter().map(|(_, v)| v.len()).sum::<usize>() as u32
 }
